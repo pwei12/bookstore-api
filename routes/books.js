@@ -18,10 +18,8 @@ router
             const keysArray = Object.keys(req.query);
             const valuesArray = Object.values(req.query);
             for (const [key, value] of queryEntries)  {
-                if(!keysArray.includes(key) ){
-                    res.send("Invalid query key");
-                }else if(!valuesArray.includes(value)){
-                    res.send("Invalid query value");
+                if(!keysArray.includes(key) || !valuesArray.includes(values)) {
+                    res.status(404).send('Sorry, we cannot find that!');
                 }else {
                     filteredBooks = filteredBooks.filter(book => book[key].toLowerCase() === value.toLowerCase());
                 }
