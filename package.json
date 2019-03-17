@@ -7,8 +7,8 @@
     "node": "10.15.3"
   },
   "scripts": {
-    "start": "NODE_ENV=prod node server.js",
-    "start:dev": "NODE_ENV=dev PORT=8081 nodemon server.js",
+    "start": "NODE_ENV=production node server.js",
+    "start:dev": "set NODE_ENV=development&& nodemon server.js",
     "test": "jest",
     "test:watch": "jest --watch"
   },
@@ -30,6 +30,7 @@
     "supertest": "^4.0.0"
   },
   "dependencies": {
-    "express": "^4.16.4"
+    "express": "^4.16.4",
+    "uuid": "^3.3.2"
   }
 }
