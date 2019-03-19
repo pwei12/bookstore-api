@@ -1,14 +1,15 @@
 const express = require("express");
 const router = express.Router();
-const uuidv4 = require("uuid/v4");
 
-let books = [
-  { id: 1, title: "ABC", price: 9, quantity: 3, author: "Alien" },
-  { id: 2, title: "DEF", price: 28, quantity: 110, author: "John" },
-  { id: 3, title: "GHI", price: 35, quantity: 48, author: "Cecilia" },
-  { id: 4, title: "JKL", price: 99, quantity: 93, author: "John" },
-  { id: 5, title: "MNO", price: 99, quantity: 93, author: "John" }
-];
+const Book = require("../models/book");
+
+// let books = [
+//   { id: 1, title: "ABC", price: 9, quantity: 3, author: "Alien" },
+//   { id: 2, title: "DEF", price: 28, quantity: 110, author: "John" },
+//   { id: 3, title: "GHI", price: 35, quantity: 48, author: "Cecilia" },
+//   { id: 4, title: "JKL", price: 99, quantity: 93, author: "John" },
+//   { id: 5, title: "MNO", price: 99, quantity: 93, author: "John" }
+// ];
 
 const verifyToken = (req, res, next) => {
   const {authorization} = req.headers;
@@ -23,6 +24,15 @@ router
   .get((req, res) => {
     if (Object.entries(req.query).length>0) {
       const queryEntries = Object.entries(req.query); //creates an array of arrays containing 2 items, 1st item=key, 2nd=value
+      const booksToBePopulated = [
+        { id: 1, title: "ABC", price: 9, quantity: 3, author: "Alien" },
+        { id: 2, title: "DEF", price: 28, quantity: 110, author: "John" }
+      ];
+      const books = Promise.all(
+        booksToBePopulated.map(async book => {
+          return await Book.create(book);
+        })
+      );
       let booksToBeMatched = books;
       let booksFound = [];
       queryEntries.forEach(([key, value]) => {
@@ -51,15 +61,14 @@ router
         .status(400)
         .json({ errMsg: "Please fill in title, price, quantity and author" });
     }
-    const newBook = {
-      id: uuidv4(),
-      title: req.body.title,
-      price: req.body.price,
-      quantity: req.body.quantity,
-      author: req.body.author
-    };
-    books.push(newBook);
-    res.status(201).json(newBook);
+
+    const newBook = new Book(req.body);
+    newBook.save(err => {
+      if(err){
+        return res.status(500).end();
+      }
+      return res.status(201).json(newBook);
+    });
   });
 
 router

@@ -1,26 +1,64 @@
 const request = require("supertest");
 const app = require("../../app");
+const { MongoMemoryServer } = require("mongodb-memory-server");
+const mongoose = require("mongoose");
+const Book = require("../../models/book");
 
 const route = (params = "") => {
   const path = "/books";
   return `${path}/${params}`;
 };
 
-describe("on route /books", () => {
+let mongoServer; 
+describe("On route /books", () => {
+  beforeAll(async () => {
+    mongoServer = new MongoMemoryServer(); //create new db, same as doing mongod in terminal/shell
+    const mongoUri = await mongoServer.getConnectionString();
+    await mongoose.connect(mongoUri);
+  });
+
+  afterAll(async () => {
+    mongoose.disconnect();
+    await mongoServer.stop();
+  });
+
   describe("GET", () => {
-    test("Get details of all books without query", done => {
+    beforeAll(() => {
+      const booksToBePopulated = [
+        { id: 1, title: "ABC", price: 9, quantity: 3, author: "Alien" },
+        { id: 2, title: "DEF", price: 28, quantity: 110, author: "John" }
+      ];
+      const books = Promise.all(
+        booksToBePopulated.map(async book => {
+          return await Book.create(book);
+        })
+      );
+      
+    });
+    afterAll(() => {
+
+    })
+    test.only("Get details of all books", () => {
       request(app)
         .get(route())
         .set("Accept", "application/json")
         .expect("Content-Type", /json/)
-        .expect([
-          { id: 1, title: "ABC", price: 9, quantity: 3, author: "Alien" },
-          { id: 2, title: "DEF", price: 28, quantity: 110, author: "John" },
-          { id: 3, title: "GHI", price: 35, quantity: 48, author: "Cecilia" },
-          { id: 4, title: "JKL", price: 99, quantity: 93, author: "John" },
-          { id: 5, title: "MNO", price: 99, quantity: 93, author: "John" }
-        ])
-        .expect(200, done);
+        .expect(200)
+        .then(res => {
+          expect(res.body).toEqual(
+            expect.arrayContaining(
+              [expect.objectContaining({
+                title: expect.any(String),
+                price: expect.any(Number),
+                quantity: expect.any(Number),
+                author: expect.any(String)
+              })]
+            )
+          )
+        })
+        .catch(err => {
+          res.send(err);
+        });
     });
     test("Get a book's details by title using query", done => {
       request(app)
@@ -63,14 +101,14 @@ describe("on route /books", () => {
         .expect("Content-Type", /json/)
         .expect(201)
         .then(res => {
-          expect(res.body).toEqual(expect.any(Object));
-          expect(res.body).toEqual({
-            id: expect.any(String),
-            title: "XYZ",
-            price: 18.9,
-            quantity: 11,
-            author: "Lilian"
-          });
+          expect(res.body).toEqual(
+            expect.objectContaining({
+              title: "XYZ",
+              price: 18.9,
+              quantity: 11,
+              author: "Lilian"
+            })
+          );
           done();
         });
     });

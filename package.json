@@ -26,11 +26,13 @@
   "devDependencies": {
     "eslint": "^5.15.1",
     "jest": "^24.5.0",
+    "mongodb-memory-server": "^4.2.1",
     "nodemon": "^1.18.10",
     "supertest": "^4.0.0"
   },
   "dependencies": {
     "express": "^4.16.4",
+    "mongoose": "^5.4.19",
     "uuid": "^3.3.2"
   }
 }
