@@ -10,11 +10,13 @@ const route = (params = "") => {
 };
 
 let mongoServer; 
+let db;
 describe("On route /books", () => {
   beforeAll(async () => {
     mongoServer = new MongoMemoryServer(); //create new db, same as doing mongod in terminal/shell
     const mongoUri = await mongoServer.getConnectionString();
     await mongoose.connect(mongoUri);
+    db = mongoose.connection;
   });
 
   afterAll(async () => {
@@ -23,53 +25,76 @@ describe("On route /books", () => {
   });
 
   describe("GET", () => {
-    beforeAll(() => {
-      const booksToBePopulated = [
-        { id: 1, title: "ABC", price: 9, quantity: 3, author: "Alien" },
-        { id: 2, title: "DEF", price: 28, quantity: 110, author: "John" }
-      ];
-      const books = Promise.all(
-        booksToBePopulated.map(async book => {
-          return await Book.create(book);
-        })
-      );
-      
+    beforeEach(async () => {
+        await Book.insertMany([
+          { id: 1, title: "ABC", price: 9, quantity: 3, author: "Alien" },
+          { id: 2, title: "DEF", price: 28, quantity: 110, author: "John" },
+          { id: 3, title: "GHI", price: 35, quantity: 48, author: "Cecilia" },
+          { id: 4, title: "JKL", price: 99, quantity: 93, author: "John" },
+          { id: 5, title: "MNO", price: 99, quantity: 93, author: "John" }
+        ]);      
     });
-    afterAll(() => {
-
-    })
-    test.only("Get details of all books", () => {
+    afterEach(async() => {
+      await db.dropCollection("books");
+    });
+    
+    test.only("Get details of all books", (done) => {
+      const expectedBooks = [
+        { id: 1, title: "ABC", price: 9, quantity: 3, author: "Alien" },
+        { id: 2, title: "DEF", price: 28, quantity: 110, author: "John" },
+        { id: 3, title: "GHI", price: 35, quantity: 48, author: "Cecilia" },
+        { id: 4, title: "JKL", price: 99, quantity: 93, author: "John" },
+        { id: 5, title: "MNO", price: 99, quantity: 93, author: "John" }
+      ];
       request(app)
         .get(route())
         .set("Accept", "application/json")
         .expect("Content-Type", /json/)
         .expect(200)
         .then(res => {
-          expect(res.body).toEqual(
-            expect.arrayContaining(
-              [expect.objectContaining({
-                title: expect.any(String),
-                price: expect.any(Number),
-                quantity: expect.any(Number),
-                author: expect.any(String)
-              })]
-            )
-          )
-        })
+          const books = res.body;
+          books.forEach((book, index) => {
+            expect(book).toEqual(
+              expect.objectContaining(expectedBooks[index]
+            ));
+            //or
+            // expect(book.title).toBe(expectedBooks[index].title);
+            // expect(book.author).toBe(expectedBooks[index].autor);
+          });
+          // expect(books[0].toEqual(
+          //   expect.objectContaining({
+          //     title: "ABC",
+          //     price: 9,
+          //     quantity: 3,
+          //     author: "Alien"
+          //   })
+          // ))
+          // done();
+        }, done)
         .catch(err => {
-          res.send(err);
+         // res.send(err);
         });
     });
     test("Get a book's details by title using query", done => {
+      const expectedBooks = [
+        { id: 3, title: "GHI", price: 35, quantity: 48, author: "Cecilia" }
+      ];
       request(app)
         .get(route())
         .query({ title: "GHI" })
         .set("Accept", "application/json")
         .expect("Content-Type", /json/)
-        .expect([
-          { id: 3, title: "GHI", price: 35, quantity: 48, author: "Cecilia" }
-        ])
-        .expect(200, done);
+        .expect(200)
+        // .then(res => {
+        //   const book = res.body[0];
+        //   expect(book.title).toEqual("Alien");
+        // });
+        .then(res => {
+            expect(res.body).toEqual(
+              expect.objectContaining(expectedBooks[0]
+            ));
+          done();
+        })
     });
     test("Get books' details by author and title using query", done => {
       request(app)
