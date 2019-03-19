@@ -45,15 +45,15 @@ router
     // } else {
     //   res.json(books);
     // }
-    if (Object.entries(req.query).length>0) {
-      // const queryEntries = Object.entries(req.query); //creates an array of arrays containing 2 items, 1st item=key, 2nd=value
-      const queryKeys = Object.keys(req.query);
+    // if (Object.entries(req.query).length>0) {
+    //   // const queryEntries = Object.entries(req.query); //creates an array of arrays containing 2 items, 1st item=key, 2nd=value
+    //   const queryKeys = Object.keys(req.query);
       
-      return queryKeys.forEach(([key]) => {
-         Book.find({key})
-        .then(book => res.json(book))
-      });
-    } 
+    //   return queryKeys.forEach(([key]) => {
+    //      Book.find({key})
+    //     .then(book => res.json(book))
+    //   });
+    // } 
      return Book.find((err, books) => {
         if(err) {
           //return 5xx error
@@ -100,29 +100,15 @@ router
     }
   })
   .put(verifyToken, (req, res) => {
-    const found = books.some(book => book.id === parseInt(req.params.id));
-    if (found) {
-      books.forEach(book => {
-        if (book.id === parseInt(req.params.id)) {
-          const keys = Object.keys(book);
-          keys.forEach(key =>
-            key === "id"
-              // ? (book[key] = `${book[key]}`)
-              ? (book[key])
-              : (book[key] = req.body[key]
-                  ? req.body[key]
-                  : res
-                      .status(400)
-                      .json({ errMsg: "Please send full entity." }))
-          );
-          res.status(202).json(book);
-        }
-      });
-    } else {
-      res
-        .status(400)
-        .json({ errMsg: `There's no book with id ${req.params.id}` });
-    }
+    Book.findByIdAndUpdate(
+      req.params.id, 
+      req.body, 
+      {runValidators: true, new: true}, 
+      (err, book) => {
+      if (err) {
+        res.sendStatus(400);
+      }
+      return res.status(202).json(book)});
   })
   .patch(verifyToken, (req, res) => {
     const found = books.some(book => book.id === parseInt(req.params.id));
@@ -143,15 +129,17 @@ router
     }
   })
   .delete(verifyToken, (req, res) => {
-    const found = books.some(book => book.id === parseInt(req.params.id));
-    if (found) {
-      books = books.filter(book => book.id !== parseInt(req.params.id));
-      res.status(202).json(books);
-    } else {
-      res
-        .status(400)
-        .json({ errMsg: `There's no book with id ${req.params.id}` });
+   Book.findByIdAndDelete(req.params.id, (err, book) => {
+    if(err){
+      console.log("ERROR", err)
+      return res.sendStatus(500);
+    } 
+    if(!book){
+      return res.sendStatus(404);
     }
+    return res.sendStatus(202);
+   });
+   
   });
 
 module.exports = router;
