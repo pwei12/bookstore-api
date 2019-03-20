@@ -37,7 +37,7 @@ describe("On route /books", () => {
   });
 
   describe("GET", () => {
-    test.only("Get details of all books", done => {
+    test.only("Get details of all books", async () => {
       const expectedBooks = [
         { title: "PUT TEST", price: 9, quantity: 3, author: "haha" },
         { title: "DEF", price: 28, quantity: 110, author: "John" },
@@ -45,18 +45,16 @@ describe("On route /books", () => {
         { title: "JKL", price: 99, quantity: 93, author: "John" },
         { title: "MNO", price: 99, quantity: 93, author: "John" }
       ];
-      request(app)
+      const res = await request(app)
         .get(route())
         .set("Accept", "application/json")
         .expect("Content-Type", /json/)
-        .expect(200)
-        .then(res => {
-          const books = res.body;
-          expect(books.length).toBe(expectedBooks.length);
-          books.forEach((book, index) => {
-            expect(book).toEqual(expect.objectContaining(expectedBooks[index]));
-          });
-          done();
+        .expect(200);
+
+        const books = res.body;
+        expect(books.length).toBe(expectedBooks.length);
+        books.forEach((book, index) => {
+          expect(book).toEqual(expect.objectContaining(expectedBooks[index]));
         });
     });
     test("Get a book's details by title using query", done => {
@@ -263,8 +261,8 @@ describe("On route /books/:id", () => {
     });
   });
 
-  describe.only("DELETE", () => {
-    test("Remove a book with valid id", async () => {
+  describe("DELETE", () => {
+    test.only("Remove a book with valid id", async () => {
       const { _id } = await Book.findOne({ title: "DELETE TEST" });
       await request(app)
         .delete(route(_id))

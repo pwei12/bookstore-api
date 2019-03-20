@@ -10,7 +10,7 @@
     "start": "NODE_ENV=production node server.js",
     "start:dev": "set NODE_ENV=development&& nodemon server.js",
     "start:db": "mongod",
-    "start:server": "nodemon --inspect server.js",
+    "start:server": "nodemon --inspect  server.js",
     "dev": "concurrently \"npm run start:db\" \"npm run start:server\"",
     "test": "jest",
     "test:watch": "jest --watch"
